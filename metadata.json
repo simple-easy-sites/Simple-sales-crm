@@ -1,6 +1,7 @@
+
 {
   "name": "Simple Sales CRM",
   "description": "A web-based CRM system for small sales teams to track and manage merchant records. Features include client tracking, adding/editing merchants, and a dashboard view. Data is stored locally.",
   "requestFramePermissions": [],
-  "prompt": ""
+  "prompt": "Fix the following errors:\nCRITICAL: Supabase URL or Anon Key is not configured. \n    Please set REACT_APP_SUPABASE_URL and REACT_APP_SUPABASE_ANON_KEY environment variables.\n    In Vercel, set these in the project's Environment Variables settings.\n    The application will NOT function correctly with Supabase until these are set.\n    Using placeholder credentials to allow the app to load."
 }

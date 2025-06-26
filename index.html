@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -80,10 +81,11 @@
     }
   </script>
   <!--
-    NOTE: For Supabase integration, you would typically use environment variables
-    for SUPABASE_URL and SUPABASE_ANON_KEY in a build system.
-    Since this project has a simple setup, these values will be directly
-    in the `lib/supabaseClient.ts` file. Ensure you update them there.
+    NOTE: For Supabase integration, this app uses environment variables:
+    - REACT_APP_SUPABASE_URL
+    - REACT_APP_SUPABASE_ANON_KEY
+    These must be configured in your deployment environment (e.g., Vercel)
+    for the application to connect to Supabase.
   -->
 <script type="importmap">
 {
