@@ -1,0 +1,6 @@
+{
+  "name": "Simple Sales CRM",
+  "description": "A web-based CRM system for small sales teams to track and manage merchant records. Features include client tracking, adding/editing merchants, and a dashboard view. Data is stored locally.",
+  "requestFramePermissions": [],
+  "prompt": ""
+}
