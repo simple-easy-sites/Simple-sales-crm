@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { HashRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { AuthProvider } from './contexts/AuthContext';
@@ -6,6 +7,7 @@ import { DashboardPage } from './pages/DashboardPage';
 // import { CreateMerchantPage } from './pages/CreateMerchantPage'; // Removed
 import { MerchantDetailPage } from './pages/MerchantDetailPage';
 import { AddLeadMerchantPage } from './pages/AddLeadMerchantPage'; 
+import { TestSupabasePage } from './pages/test-supabase';
 import { Navbar } from './components/Navbar';
 import { ProtectedRoute } from './components/ProtectedRoute';
 import { ROUTES } from './constants';
@@ -18,6 +20,7 @@ const App: React.FC = () => {
           <Navbar />
           <main className="flex-grow">
             <Routes>
+              <Route path="/test-supabase" element={<TestSupabasePage />} />
               <Route path={ROUTES.LOGIN} element={<LoginPage />} />
               <Route element={<ProtectedRoute />}>
                 <Route path={ROUTES.DASHBOARD} element={<DashboardPage />} />
