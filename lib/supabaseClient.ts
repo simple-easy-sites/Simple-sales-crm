@@ -5,10 +5,10 @@ import { User as AppUser } from '../types'; // Import your app's User type
 // Read from environment variables. If they are not set (e.g., in local development),
 // use non-functional, but syntactically valid, placeholders. This allows the 
 // application to load without crashing and avoids console errors.
-// The developer must set the actual environment variables in their deployment
-// environment (like Vercel) for Supabase functionality to work.
-const supabaseUrl = process.env.REACT_APP_SUPABASE_URL || 'https://example.supabase.co';
-const supabaseAnonKey = process.env.REACT_APP_SUPABASE_ANON_KEY || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZS1kZW1vIiwicm9sZSI6ImFub24iLCJleHAiOjE5ODM4MTI5OTZ9.CRXP1A7WOeoJeXxjNni43kdQwgnWNReilDMblYTn_I0';
+// For Vercel deployment, these variables MUST be prefixed with NEXT_PUBLIC_
+// to be exposed to the browser.
+const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || 'https://example.supabase.co';
+const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZS1kZW1vIiwicm9sZSI6ImFub24iLCJleHAiOjE5ODM4MTI5OTZ9.CRXP1A7WOeoJeXxjNni43kdQwgnWNReilDMblYTn_I0';
 
 export const supabase = createClient(supabaseUrl, supabaseAnonKey);
 
