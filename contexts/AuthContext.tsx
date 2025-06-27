@@ -6,7 +6,7 @@ import { AuthChangeEvent, Session, User as SupabaseUser } from '@supabase/supaba
 
 interface AuthContextType {
   currentUser: User | null;
-  login: (email: string, password_param: string) => Promise<boolean>; // username parameter changed to email
+  login: (email: string, password_param: string) => Promise<string | null>; // Returns error message string or null on success
   logout: () => void;
   isLoading: boolean;
   session: Session | null; // Added session state
@@ -42,7 +42,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     };
   }, []);
 
-  const login = async (email: string, password_param: string): Promise<boolean> => {
+  const login = async (email: string, password_param: string): Promise<string | null> => {
     setIsLoading(true);
     try {
       const { error } = await supabase.auth.signInWithPassword({
@@ -52,15 +52,16 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       if (error) {
         console.error('Login error:', error.message);
         setIsLoading(false);
-        return false;
+        return error.message;
       }
       // onAuthStateChange will handle setting the user and session
       // setIsLoading will be handled by onAuthStateChange listener
-      return true;
-    } catch (e) {
+      return null;
+    } catch (e: any) {
       console.error('Login exception:', e);
+      const errorMessage = e.message || "An unexpected error occurred during login.";
       setIsLoading(false);
-      return false;
+      return errorMessage;
     }
   };
 

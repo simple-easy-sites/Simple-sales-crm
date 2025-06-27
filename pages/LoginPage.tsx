@@ -23,12 +23,11 @@ export const LoginPage: React.FC = () => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
-    // Use email for login
-    const success = await login(email, password); 
-    if (success) {
-      navigate(ROUTES.DASHBOARD);
+    const errorMessage = await login(email, password); 
+    if (errorMessage) {
+      setError(errorMessage); // Display the real error from Supabase
     } else {
-      setError('Invalid email or password. Please try again.');
+      navigate(ROUTES.DASHBOARD);
     }
   };
 
