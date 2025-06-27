@@ -81,12 +81,17 @@
     }
   </script>
   <!--
-    NOTE: For Supabase integration, this app uses environment variables.
-    For Vercel, these MUST be prefixed with 'NEXT_PUBLIC_':
-    - NEXT_PUBLIC_SUPABASE_URL
-    - NEXT_PUBLIC_SUPABASE_ANON_KEY
-    These must be configured in your Vercel project's Environment Variables settings
-    for the application to connect to Supabase.
+    CRITICAL CONFIGURATION FOR VERCEL:
+    This app connects to Supabase using environment variables. For a React project
+    of this type on Vercel, you MUST use the 'REACT_APP_' prefix.
+
+    Please ensure the following variables are set in your Vercel project's
+    "Settings" > "Environment Variables" section:
+
+    - REACT_APP_SUPABASE_URL
+    - REACT_APP_SUPABASE_ANON_KEY
+
+    The application will NOT work until these are correctly set and you have redeployed.
   -->
 <script type="importmap">
 {
