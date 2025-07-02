@@ -46,9 +46,9 @@ const LoginPage: React.FC = () => {
     const { error } = await supabase.auth.signInWithOtp({
       email,
       options: {
-        // Use window.location.href to ensure the path is preserved for the redirect
-        // This is important for apps that might be hosted in a subdirectory or use hash routing
-        emailRedirectTo: window.location.href,
+        // This is the crucial fix. We tell Supabase to redirect the user
+        // directly to the dashboard after they click the magic link.
+        emailRedirectTo: `${window.location.origin}/#/dashboard`,
       },
     });
 
