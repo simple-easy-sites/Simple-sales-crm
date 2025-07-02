@@ -1,82 +1,88 @@
-import React, { createContext, useState, useContext, useEffect, ReactNode } from 'react';
-import { User } from '../types';
-// import { HARDCODED_USERS, LOCAL_STORAGE_KEYS } from '../constants'; // Removed
-import { supabase, mapSupabaseUserToAppUser } from '../lib/supabaseClient'; // Added
-import { AuthChangeEvent, Session, User as SupabaseUser } from '@supabase/supabase-js';
+import React, { createContext, useState, useEffect, useContext, ReactNode, useCallback } from 'react';
+import { Session, User } from '@supabase/supabase-js';
+import { getSupabase, initializeSupabase, isSupabaseConfigured } from '../services/supabase';
+import { useNavigate } from 'react-router-dom';
 
 interface AuthContextType {
-  currentUser: User | null;
-  login: (email: string, password_param: string) => Promise<string | null>; // Returns error message string or null on success
-  logout: () => void;
-  isLoading: boolean;
-  session: Session | null; // Added session state
+  session: Session | null;
+  user: User | null;
+  loading: boolean;
+  logout: () => Promise<void>;
+  isConfigured: boolean;
+  configure: (url: string, key: string) => void;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
-export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
-  const [currentUser, setCurrentUser] = useState<User | null>(null);
+export const AuthProvider = ({ children }: { children: ReactNode }): React.ReactNode => {
   const [session, setSession] = useState<Session | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
+  const [user, setUser] = useState<User | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [isConfigured, setIsConfigured] = useState(false);
+  const navigate = useNavigate();
+
+  const configure = useCallback((url: string, key: string) => {
+    initializeSupabase(url, key);
+    setIsConfigured(true);
+  }, []);
 
   useEffect(() => {
-    setIsLoading(true);
+    setIsConfigured(isSupabaseConfigured());
+    
+    if (!isSupabaseConfigured()) {
+      setLoading(false);
+      return;
+    }
+    
+    setLoading(true);
+    const supabase = getSupabase()!;
+
     const getSession = async () => {
       const { data: { session } } = await supabase.auth.getSession();
       setSession(session);
-      setCurrentUser(mapSupabaseUserToAppUser(session?.user ?? null));
-      setIsLoading(false);
+      setUser(session?.user ?? null);
+      setLoading(false);
     };
+    
     getSession();
 
-    const { data: authListener } = supabase.auth.onAuthStateChange(
-      async (event: AuthChangeEvent, session: Session | null) => {
-        setSession(session);
-        setCurrentUser(mapSupabaseUserToAppUser(session?.user ?? null));
-        setIsLoading(false);
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+      setSession(session);
+      setUser(session?.user ?? null);
+      setLoading(false);
+      
+      if (_event === 'SIGNED_IN') {
+        navigate('/dashboard');
+      } else if (_event === 'SIGNED_OUT') {
+        navigate('/login');
       }
-    );
+    });
 
     return () => {
-      authListener?.subscription.unsubscribe();
+      subscription?.unsubscribe();
     };
-  }, []);
+  }, [isConfigured, navigate]);
 
-  const login = async (email: string, password_param: string): Promise<string | null> => {
-    setIsLoading(true);
-    try {
-      const { error } = await supabase.auth.signInWithPassword({
-        email: email,
-        password: password_param,
-      });
-      if (error) {
-        console.error('Login error:', error.message);
-        setIsLoading(false);
-        return error.message;
-      }
-      // onAuthStateChange will handle setting the user and session
-      // setIsLoading will be handled by onAuthStateChange listener
-      return null;
-    } catch (e: any) {
-      console.error('Login exception:', e);
-      const errorMessage = e.message || "An unexpected error occurred during login.";
-      setIsLoading(false);
-      return errorMessage;
+  const logout = async () => {
+    const supabase = getSupabase();
+    if (supabase) {
+        await supabase.auth.signOut();
+        setSession(null);
+        setUser(null);
     }
   };
 
-  const logout = async () => {
-    setIsLoading(true);
-    const { error } = await supabase.auth.signOut();
-    if (error) {
-        console.error('Logout error: ', error.message);
-    }
-    // onAuthStateChange will clear user and session
-    // setIsLoading will be handled by onAuthStateChange listener
+  const value = {
+    session,
+    user,
+    loading,
+    logout,
+    isConfigured,
+    configure
   };
 
   return (
-    <AuthContext.Provider value={{ currentUser, login, logout, isLoading, session }}>
+    <AuthContext.Provider value={value}>
       {children}
     </AuthContext.Provider>
   );

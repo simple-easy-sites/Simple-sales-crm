@@ -1,89 +1,122 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { useAuth } from '../contexts/AuthContext';
-import { Input } from '../components/ui/Input';
+import { getSupabase } from '../services/supabase';
 import { Button } from '../components/ui/Button';
-import { ROUTES } from '../constants';
+import { Input } from '../components/ui/Input';
+import { Icons } from '../components/ui/Icons';
+import { useAuth } from '../contexts/AuthContext';
+import ConfigModal from '../components/ConfigModal';
 
-// Icon removed as per request
-
-export const LoginPage: React.FC = () => {
-  const [email, setEmail] = useState(''); // Changed from username to email
-  const [password, setPassword] = useState('');
-  const [error, setError] = useState('');
-  const { login, isLoading, currentUser } = useAuth();
+const LoginPage: React.FC = () => {
+  const { session, isConfigured, configure } = useAuth();
   const navigate = useNavigate();
+  const [email, setEmail] = useState('');
+  const [loading, setLoading] = useState(false);
+  const [message, setMessage] = useState('');
+  const [error, setError] = useState('');
+  const [showConfigModal, setShowConfigModal] = useState(false);
 
-  useEffect(() => {
-    if (currentUser) {
-      navigate(ROUTES.DASHBOARD);
-    }
-  }, [currentUser, navigate]);
-
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleLogin = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-    setError('');
-    const errorMessage = await login(email, password); 
-    if (errorMessage) {
-      setError(errorMessage); // Display the real error from Supabase
-    } else {
-      navigate(ROUTES.DASHBOARD);
+    
+    if (!isConfigured) {
+      setShowConfigModal(true);
+      return;
     }
+
+    setError('');
+    setMessage('');
+    setLoading(true);
+
+    const supabase = getSupabase();
+    if (!supabase) {
+        setError("Supabase is not configured correctly.");
+        setLoading(false);
+        return;
+    }
+
+    const { error } = await supabase.auth.signInWithOtp({
+      email,
+      options: {
+        emailRedirectTo: window.location.origin,
+      },
+    });
+
+    if (error) {
+      setError(error.message);
+    } else {
+      setMessage('Check your email for the magic link!');
+    }
+    setLoading(false);
+  };
+  
+  const handleConfigured = (url: string, key: string) => {
+    configure(url, key);
+    setShowConfigModal(false);
+    // You can optionally re-submit the form for the user here
+    // or let them click the button again.
   };
 
+  // If user is already logged in, redirect to dashboard
+  if (session) {
+    navigate('/dashboard');
+    return null;
+  }
+
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-100 py-12 px-4 sm:px-6 lg:px-8">
-      <div className="max-w-md w-full space-y-8 bg-white p-8 sm:p-10 rounded-xl shadow-2xl">
-        <div>
-          {/* Icon removed */}
-          <h2 className="mt-6 text-center text-3xl font-bold tracking-tight text-gray-900">
-            Sign in
-          </h2>
-          <p className="mt-2 text-center text-sm text-gray-600">
-            Use your registered email and password.
-          </p>
+    <>
+      <div className="flex min-h-screen items-center justify-center bg-light-bg dark:bg-dark-bg px-4">
+        <div className="w-full max-w-sm">
+          <div className="text-center mb-8">
+            <h1 className="text-3xl font-bold text-light-text dark:text-dark-text">MCA Sales CRM</h1>
+            <p className="text-slate-500 dark:text-slate-400 mt-2">Sign in to continue</p>
+          </div>
+          
+          <div className="bg-white dark:bg-slate-900/50 shadow-md rounded-lg p-8">
+            <form onSubmit={handleLogin}>
+              <div className="space-y-4">
+                <div className="space-y-2">
+                  <label htmlFor="email" className="text-sm font-medium text-light-text dark:text-dark-text">
+                    Email Address
+                  </label>
+                  <Input
+                    id="email"
+                    type="email"
+                    placeholder="agent@example.com"
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    required
+                    disabled={loading || !!message}
+                  />
+                </div>
+                <Button type="submit" className="w-full" isLoading={loading} disabled={loading || !!message}>
+                  <Icons.Mail className="mr-2 h-4 w-4" />
+                  Send Magic Link
+                </Button>
+              </div>
+            </form>
+          </div>
+          
+          {message && (
+            <div className="mt-4 text-center text-sm text-green-600 dark:text-green-400 p-3 bg-green-100 dark:bg-green-900/50 rounded-md">
+              {message}
+            </div>
+          )}
+          {error && (
+            <div className="mt-4 text-center text-sm text-red-600 dark:text-red-400 p-3 bg-red-100 dark:bg-red-900/50 rounded-md">
+              {error}
+            </div>
+          )}
         </div>
-        <form className="mt-8 space-y-6" onSubmit={handleSubmit}>
-          {error && <p className="text-red-600 text-sm text-center bg-red-50 p-3 rounded-md">{error}</p>}
-          <Input
-            id="email" // Changed from username to email
-            label="Email address" // Changed label
-            name="email"
-            type="email" // Changed type to email
-            autoComplete="email"
-            required
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-            placeholder="your.email@example.com"
-          />
-          <Input
-            id="password"
-            label="Password"
-            name="password"
-            type="password"
-            autoComplete="current-password"
-            required
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-            placeholder="Password"
-          />
-          <div>
-            <Button type="submit" className="w-full" isLoading={isLoading} size="lg">
-              Sign in
-            </Button>
-          </div>
-        </form>
-         {/* Removed hardcoded demo accounts as authentication is now via Supabase
-         <div className="mt-6 text-sm text-gray-500 text-center">
-            <p className="font-medium text-gray-700">Demo accounts:</p>
-            <p>Username: <span className="font-semibold">agent1</span> / Password: <span className="font-semibold">password123</span></p>
-            <p>Username: <span className="font-semibold">agent2</span> / Password: <span className="font-semibold">password456</span></p>
-          </div>
-          */}
-          <p className="mt-4 text-center text-xs text-gray-500">
-            New user? You might need to sign up via a Supabase interface or a dedicated sign-up page (not yet implemented in this app).
-          </p>
       </div>
-    </div>
+      {showConfigModal && (
+        <ConfigModal 
+          onConfigured={handleConfigured} 
+          onClose={() => setShowConfigModal(false)}
+        />
+      )}
+    </>
   );
 };
+
+export default LoginPage;

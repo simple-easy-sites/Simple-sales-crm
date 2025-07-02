@@ -1,29 +1,19 @@
+
 import React from 'react';
 
-interface InputProps extends React.InputHTMLAttributes<HTMLInputElement> {
-  label?: string;
-  error?: string;
-}
+type InputProps = React.InputHTMLAttributes<HTMLInputElement>;
 
-export const Input: React.FC<InputProps> = ({ label, id, error, className, ...props }) => {
+const Input = React.forwardRef<HTMLInputElement, InputProps>(({ className, type, ...props }, ref) => {
   return (
-    <div className="w-full">
-      {label && (
-        <label htmlFor={id} className="block text-sm font-medium text-gray-700 mb-1">
-          {label}
-        </label>
-      )}
-      <input
-        id={id}
-        className={`mt-1 block w-full px-3 py-2 border rounded-md shadow-sm 
-                   focus:outline-none focus:ring-primary-700 focus:border-primary-700 sm:text-sm
-                   bg-background border-gray-300 text-gray-900 placeholder-gray-400
-                   ${error ? 'border-red-500 focus:ring-red-500 focus:border-red-500' : 'border-gray-300'} 
-                   ${props.disabled ? 'bg-gray-100 cursor-not-allowed' : 'bg-white'}
-                   ${className || ''}`}
-        {...props}
-      />
-      {error && <p className="mt-1 text-sm text-red-600">{error}</p>}
-    </div>
+    <input
+      type={type}
+      className={`flex h-10 w-full rounded-md border border-slate-300 dark:border-slate-700 bg-light-bg dark:bg-dark-bg px-3 py-2 text-sm text-light-text dark:text-dark-text placeholder:text-slate-400 dark:placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-brand-blue focus:ring-offset-2 focus:ring-offset-light-bg dark:focus:ring-offset-dark-bg disabled:cursor-not-allowed disabled:opacity-50 ${className ?? ''}`}
+      ref={ref}
+      {...props}
+    />
   );
-};
+});
+
+Input.displayName = 'Input';
+
+export { Input };
