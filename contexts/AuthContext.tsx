@@ -1,7 +1,7 @@
+
 import React, { createContext, useState, useEffect, useContext, ReactNode, useCallback } from 'react';
 import { Session, User } from '@supabase/supabase-js';
 import { getSupabase, initializeSupabase, isSupabaseConfigured } from '../services/supabase';
-import { useNavigate } from 'react-router-dom';
 
 interface AuthContextType {
   session: Session | null;
@@ -17,58 +17,52 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 export const AuthProvider = ({ children }: { children: ReactNode }): React.ReactNode => {
   const [session, setSession] = useState<Session | null>(null);
   const [user, setUser] = useState<User | null>(null);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(true); // Start as true
   const [isConfigured, setIsConfigured] = useState(false);
-  const navigate = useNavigate();
 
   const configure = useCallback((url: string, key: string) => {
     initializeSupabase(url, key);
     setIsConfigured(true);
+    // Setting isConfigured will trigger the useEffect below
   }, []);
 
   useEffect(() => {
-    setIsConfigured(isSupabaseConfigured());
-    
-    if (!isSupabaseConfigured()) {
+    // Initial check on mount
+    const configured = isSupabaseConfigured();
+    setIsConfigured(configured);
+
+    if (!configured) {
       setLoading(false);
       return;
     }
-    
-    setLoading(true);
+
     const supabase = getSupabase()!;
+    let isMounted = true;
 
-    const getSession = async () => {
-      const { data: { session } } = await supabase.auth.getSession();
-      setSession(session);
-      setUser(session?.user ?? null);
-      setLoading(false);
-    };
-    
-    getSession();
-
+    // The onAuthStateChange listener is the single source of truth.
+    // It fires once on load with the current session, and again on any change.
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
-      setSession(session);
-      setUser(session?.user ?? null);
-      setLoading(false);
-      
-      if (_event === 'SIGNED_IN') {
-        navigate('/dashboard');
-      } else if (_event === 'SIGNED_OUT') {
-        navigate('/login');
+      if (isMounted) {
+        setSession(session);
+        setUser(session?.user ?? null);
+        setLoading(false); // We now know the auth state, so we're done loading.
       }
     });
 
     return () => {
+      isMounted = false;
       subscription?.unsubscribe();
     };
-  }, [isConfigured, navigate]);
+  }, [isConfigured]); // This effect now correctly re-runs when configuration changes
 
   const logout = async () => {
     const supabase = getSupabase();
     if (supabase) {
-        await supabase.auth.signOut();
-        setSession(null);
-        setUser(null);
+      setLoading(true);
+      await supabase.auth.signOut();
+      setSession(null);
+      setUser(null);
+      // The onAuthStateChange listener will set loading to false.
     }
   };
 
@@ -81,6 +75,8 @@ export const AuthProvider = ({ children }: { children: ReactNode }): React.React
     configure
   };
 
+  // Render children only after the initial loading is complete to prevent flicker
+  // or premature rendering of child components that depend on auth state.
   return (
     <AuthContext.Provider value={value}>
       {children}

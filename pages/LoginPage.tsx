@@ -1,4 +1,5 @@
-import React, { useState } from 'react';
+
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { getSupabase } from '../services/supabase';
 import { Button } from '../components/ui/Button';
@@ -8,13 +9,20 @@ import { useAuth } from '../contexts/AuthContext';
 import ConfigModal from '../components/ConfigModal';
 
 const LoginPage: React.FC = () => {
-  const { session, isConfigured, configure } = useAuth();
+  const { session, isConfigured, configure, loading: authLoading } = useAuth();
   const navigate = useNavigate();
   const [email, setEmail] = useState('');
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState('');
   const [error, setError] = useState('');
   const [showConfigModal, setShowConfigModal] = useState(false);
+
+  useEffect(() => {
+    // If auth is not loading and a session exists, redirect to dashboard
+    if (!authLoading && session) {
+      navigate('/dashboard', { replace: true });
+    }
+  }, [session, authLoading, navigate]);
 
   const handleLogin = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -38,7 +46,9 @@ const LoginPage: React.FC = () => {
     const { error } = await supabase.auth.signInWithOtp({
       email,
       options: {
-        emailRedirectTo: window.location.origin,
+        // Use window.location.href to ensure the path is preserved for the redirect
+        // This is important for apps that might be hosted in a subdirectory or use hash routing
+        emailRedirectTo: window.location.href,
       },
     });
 
@@ -53,16 +63,20 @@ const LoginPage: React.FC = () => {
   const handleConfigured = (url: string, key: string) => {
     configure(url, key);
     setShowConfigModal(false);
-    // You can optionally re-submit the form for the user here
-    // or let them click the button again.
+    // Let the user click the button again to confirm their action.
   };
 
-  // If user is already logged in, redirect to dashboard
-  if (session) {
-    navigate('/dashboard');
-    return null;
+  // While auth is loading, we can show a loader or nothing to prevent flicker
+  if (authLoading) {
+    return (
+      <div className="flex items-center justify-center h-screen bg-light-bg dark:bg-dark-bg">
+        <Icons.Spinner className="h-8 w-8 animate-spin text-brand-blue" />
+      </div>
+    );
   }
 
+  // If user is already logged in, this will be handled by the useEffect.
+  // This return is for when the user is not logged in.
   return (
     <>
       <div className="flex min-h-screen items-center justify-center bg-light-bg dark:bg-dark-bg px-4">
