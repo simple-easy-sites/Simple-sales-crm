@@ -1,19 +1,12 @@
-import React, { useEffect } from 'react';
+import React from 'react';
 import { HashRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { AuthProvider } from './contexts/AuthContext';
 import LoginPage from './pages/LoginPage';
 import DashboardPage from './pages/DashboardPage';
 import ProtectedRoute from './components/ProtectedRoute';
-import { loadSupabaseFromStorage } from './services/supabase';
 import AuthCallbackPage from './pages/AuthCallbackPage';
 
 function App(): React.ReactNode {
-  useEffect(() => {
-    // On initial load, try to configure Supabase from localStorage.
-    // This is non-blocking and allows the app to start immediately.
-    loadSupabaseFromStorage();
-  }, []);
-
   return (
     <HashRouter>
       <AuthProvider>

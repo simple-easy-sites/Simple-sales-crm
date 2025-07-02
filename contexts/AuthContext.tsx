@@ -1,87 +1,87 @@
-import React, { createContext, useState, useEffect, useContext, ReactNode, useCallback } from 'react';
-import { Session, User } from '@supabase/supabase-js';
-import { getSupabase, initializeSupabase, isSupabaseConfigured } from '../services/supabase';
+import React, { createContext, useContext, useEffect, useState } from 'react';
+import { User, Session } from '@supabase/supabase-js';
+import { supabase } from '../services/supabase';
+import { useNavigate } from 'react-router-dom';
 
 interface AuthContextType {
-  session: Session | null;
   user: User | null;
+  session: Session | null;
   loading: boolean;
   logout: () => Promise<void>;
-  isConfigured: boolean;
-  configure: (url: string, key: string) => void;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
-export const AuthProvider = ({ children }: { children: ReactNode }): React.ReactNode => {
-  const [session, setSession] = useState<Session | null>(null);
+export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [user, setUser] = useState<User | null>(null);
+  const [session, setSession] = useState<Session | null>(null);
   const [loading, setLoading] = useState(true);
-  const [isConfigured, setIsConfigured] = useState(false);
-
-  const configure = useCallback((url: string, key: string) => {
-    initializeSupabase(url, key);
-    setIsConfigured(true);
-  }, []);
+  const navigate = useNavigate();
 
   useEffect(() => {
-    // Initial check on mount
-    const configured = isSupabaseConfigured();
-    setIsConfigured(configured);
-
-    if (!configured) {
-      setLoading(false);
-      return;
-    }
-
-    const supabase = getSupabase()!;
-    let isMounted = true;
-
-    // The onAuthStateChange listener is the single source of truth for auth state.
-    // Its ONLY responsibility is to update the state in this context.
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
-      if (isMounted) {
+    // Check for existing session
+    const initAuth = async () => {
+      try {
+        const { data: { session } } = await supabase.auth.getSession();
         setSession(session);
         setUser(session?.user ?? null);
-        setLoading(false); // We now know the auth state, so we're done loading.
+      } catch (error) {
+        console.error('Error getting session:', error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    initAuth();
+
+    // Listen for auth changes
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
+      console.log('Auth event:', event);
+      console.log('Session:', session);
+      
+      setSession(session);
+      setUser(session?.user ?? null);
+      
+      if (event === 'SIGNED_IN' && session) {
+        // Don't navigate here - let the AuthCallbackPage handle it
+        console.log('User signed in');
+      } else if (event === 'SIGNED_OUT') {
+        navigate('/login');
       }
     });
 
     return () => {
-      isMounted = false;
-      subscription?.unsubscribe();
+      subscription.unsubscribe();
     };
-  }, [isConfigured]);
+  }, [navigate]);
 
   const logout = async () => {
-    const supabase = getSupabase();
-    if (supabase) {
-      await supabase.auth.signOut();
-      // onAuthStateChange will automatically update the user state to null,
-      // and ProtectedRoute will handle redirecting to the login page.
+    try {
+      const { error } = await supabase.auth.signOut();
+      if (error) throw error;
+    } catch (error) {
+      console.error('Error logging out:', error);
     }
   };
 
-  const value = {
-    session,
+  const value: AuthContextType = {
     user,
+    session,
     loading,
     logout,
-    isConfigured,
-    configure
   };
 
-  return (
-    <AuthContext.Provider value={value}>
-      {children}
-    </AuthContext.Provider>
-  );
+  return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 };
 
-export const useAuth = (): AuthContextType => {
+export const useAuth = () => {
   const context = useContext(AuthContext);
   if (context === undefined) {
     throw new Error('useAuth must be used within an AuthProvider');
   }
   return context;
 };
+
+// Legacy exports for compatibility
+export const currentUser = null;
+export const AuthContextType = {} as any;
