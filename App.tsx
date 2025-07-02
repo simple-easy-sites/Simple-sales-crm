@@ -5,6 +5,7 @@ import LoginPage from './pages/LoginPage';
 import DashboardPage from './pages/DashboardPage';
 import ProtectedRoute from './components/ProtectedRoute';
 import { loadSupabaseFromStorage } from './services/supabase';
+import AuthCallbackPage from './pages/AuthCallbackPage';
 
 function App(): React.ReactNode {
   useEffect(() => {
@@ -19,6 +20,7 @@ function App(): React.ReactNode {
         <div className="bg-light-bg dark:bg-dark-bg min-h-screen font-sans antialiased">
           <Routes>
             <Route path="/login" element={<LoginPage />} />
+            <Route path="/auth-callback" element={<AuthCallbackPage />} />
             <Route 
               path="/dashboard" 
               element={
@@ -27,7 +29,7 @@ function App(): React.ReactNode {
                 </ProtectedRoute>
               } 
             />
-            <Route path="*" element={<Navigate to="/dashboard" />} />
+            <Route path="*" element={<Navigate to="/login" />} />
           </Routes>
         </div>
       </AuthProvider>

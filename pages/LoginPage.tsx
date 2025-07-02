@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { getSupabase } from '../services/supabase';
@@ -24,21 +23,14 @@ const LoginPage: React.FC = () => {
     }
   }, [session, authLoading, navigate]);
 
-  const handleLogin = async (e: React.FormEvent<HTMLFormElement>) => {
-    e.preventDefault();
-    
-    if (!isConfigured) {
-      setShowConfigModal(true);
-      return;
-    }
-
+  const sendMagicLink = async () => {
     setError('');
     setMessage('');
     setLoading(true);
 
     const supabase = getSupabase();
     if (!supabase) {
-        setError("Supabase is not configured correctly.");
+        setError("Supabase is not configured correctly. Please refresh and try again.");
         setLoading(false);
         return;
     }
@@ -47,8 +39,8 @@ const LoginPage: React.FC = () => {
       email,
       options: {
         // This is the crucial fix. We tell Supabase to redirect the user
-        // directly to the dashboard after they click the magic link.
-        emailRedirectTo: `${window.location.origin}/#/dashboard`,
+        // to a dedicated callback page to prevent race conditions.
+        emailRedirectTo: `${window.location.origin}/#/auth-callback`,
       },
     });
 
@@ -59,14 +51,23 @@ const LoginPage: React.FC = () => {
     }
     setLoading(false);
   };
+
+  const handleInitialLogin = async (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    if (!isConfigured) {
+      setShowConfigModal(true);
+      return;
+    }
+    await sendMagicLink();
+  };
   
   const handleConfigured = (url: string, key: string) => {
     configure(url, key);
     setShowConfigModal(false);
-    // Let the user click the button again to confirm their action.
+    // This is the UX improvement: automatically send the link after configuration.
+    sendMagicLink();
   };
 
-  // While auth is loading, we can show a loader or nothing to prevent flicker
   if (authLoading) {
     return (
       <div className="flex items-center justify-center h-screen bg-light-bg dark:bg-dark-bg">
@@ -75,8 +76,6 @@ const LoginPage: React.FC = () => {
     );
   }
 
-  // If user is already logged in, this will be handled by the useEffect.
-  // This return is for when the user is not logged in.
   return (
     <>
       <div className="flex min-h-screen items-center justify-center bg-light-bg dark:bg-dark-bg px-4">
@@ -87,7 +86,7 @@ const LoginPage: React.FC = () => {
           </div>
           
           <div className="bg-white dark:bg-slate-900/50 shadow-md rounded-lg p-8">
-            <form onSubmit={handleLogin}>
+            <form onSubmit={handleInitialLogin}>
               <div className="space-y-4">
                 <div className="space-y-2">
                   <label htmlFor="email" className="text-sm font-medium text-light-text dark:text-dark-text">
