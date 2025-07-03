@@ -1,6 +1,0 @@
-{
-  "name": "MCA Sales CRM",
-  "description": "A high-performance Sales CRM for Merchant Cash Advance agents, starting with a secure authentication foundation using Supabase Magic Link.",
-  "requestFramePermissions": [],
-  "prompt": ""
-}

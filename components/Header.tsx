@@ -1,29 +1,48 @@
-import React from 'react';
-import { useAuth } from '../contexts/AuthContext';
-import { Button } from './ui/Button';
-import { Icons } from './ui/Icons';
+"use client"
 
-const Header: React.FC = () => {
-    const { user, logout, session } = useAuth();
+import Link from "next/link"
+import { usePathname } from "next/navigation"
+import { cn } from "@/lib/utils"
 
-    return (
-        <header className="bg-light-bg/80 dark:bg-dark-bg/80 backdrop-blur-sm sticky top-0 z-40 w-full border-b border-slate-200 dark:border-slate-800">
-            <div className="container mx-auto flex h-16 items-center justify-between px-4 sm:px-6 lg:px-8">
-                <h1 className="text-xl font-bold text-light-text dark:text-dark-text">MCA CRM</h1>
-                <div className="flex items-center space-x-4">
-                    {user && (
-                        <span className="text-sm text-slate-500 dark:text-slate-400 hidden sm:inline-block">
-                            {user.email}
-                        </span>
-                    )}
-                    <Button onClick={logout} variant="secondary" size="sm">
-                        <Icons.LogOut className="mr-2 h-4 w-4" />
-                        Logout
-                    </Button>
-                </div>
+const navigation = [
+  { name: "Dashboard", href: "/" },
+  { name: "Leads", href: "/leads" },
+  { name: "Add Lead", href: "/add-lead" },
+]
+
+export function Header() {
+  const pathname = usePathname()
+
+  return (
+    <header className="sticky top-0 z-50 backdrop-blur-xl bg-white/80 border-b border-slate-200/60">
+      <div className="container mx-auto px-6">
+        <div className="flex items-center justify-between h-16">
+          {/* Logo/Title */}
+          <div className="flex items-center space-x-4">
+            <div className="w-8 h-8 bg-gradient-to-br from-blue-500 to-blue-600 rounded-lg flex items-center justify-center">
+              <span className="text-white font-bold text-sm">M</span>
             </div>
-        </header>
-    );
-};
+            <h1 className="text-xl font-semibold text-slate-900 tracking-tight">MCA CRM</h1>
+          </div>
 
-export default Header;
+          {/* Navigation */}
+          <nav className="flex items-center space-x-1">
+            {navigation.map((item) => (
+              <Link
+                key={item.name}
+                href={item.href}
+                className={cn(
+                  "px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200",
+                  "hover:bg-slate-100/80 hover:text-slate-900",
+                  pathname === item.href ? "bg-blue-50 text-blue-700 shadow-sm" : "text-slate-600",
+                )}
+              >
+                {item.name}
+              </Link>
+            ))}
+          </nav>
+        </div>
+      </div>
+    </header>
+  )
+}
